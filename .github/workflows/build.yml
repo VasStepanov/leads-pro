@@ -8,42 +8,42 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
         with:
-          ref: gh-pages # Берем файлы из ветки, куда ты делаешь deploy
+          ref: gh-pages
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      - name: Prepare WWW
+        run: |
+          mkdir -p www
+          # Копируем всё содержимое билда из ветки gh-pages в папку www
+          # Используем ".", чтобы скопировать все скрытые файлы и подпапки
+          cp -R . www/ || true
+          # Удаляем из копии папку .github, чтобы она не попала в APK
+          rm -rf www/.github
+
       - name: Install Dependencies
         run: |
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets
 
-      - name: Initialize and Copy Files
+      - name: Initialize Capacitor
         run: |
-          # 1. Создаем папку www
-          mkdir -p www
-          
-          # 2. Копируем всё содержимое из ветки gh-pages в www (включая папку mocks)
-          # Используем точку, чтобы копирование было глубоким
-          cp -R ./* www/ 2>/dev/null || true
-          
-          # 3. Инициализируем Capacitor
           npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir www
           npx cap add android
-          
-          # 4. Генерируем иконки, если файл icon.png есть в корне
-          if [ -f "icon.png" ]; then 
-            npx @capacitor/assets generate --android
+          # Генерируем иконки из icon.png
+          if [ -f "www/icon.png" ]; then
+            npx capacitor-assets generate --android --icon-path www/icon.png
           fi
 
       - name: Build APK
         run: |
-          # Синхронизируем папку www с проектом Android
           npx cap copy android
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          # Собираем APK только для одной архитектуры (arm64), чтобы снизить вес
+          ./gradlew assembleDebug -Pandroid.bundle.enableSplit=true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
