@@ -1,5 +1,7 @@
 name: Build Android APK
-on: [push]
+on:
+  push:
+    branches: [ gh-pages ] # Сборка начнется, когда ты сделаешь deploy
 
 jobs:
   build:
@@ -7,38 +9,35 @@ jobs:
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
+        with:
+          ref: gh-pages # Берем файлы из ветки, куда улетел билд
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Prepare Files
+      - name: Install Capacitor
         run: |
-          mkdir -p www
-          cp -r index.html manifest.json www/ || true
-          cp -r assets www/ || true
-          cp -r sw.js www/ || true
+          npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets
 
-      - name: Install Deps
+      - name: Initialize
         run: |
-          npm install --no-package-lock
-          npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0
-
-      - name: Cap Init
-        run: |
-          npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir www
+          # Собираем прямо из корня ветки gh-pages
+          npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir ./
           npx cap add android
+          # Генерируем иконку, если она прилетела в gh-pages
+          if [ -f "icon.png" ]; then npx capacitor-assets generate --android; fi
 
-      - name: Sync and Build
+      - name: Build APK
         run: |
           npx cap copy android
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: CRM-Leads-Pro-Debug
+          name: CRM-Leads-Pro-Final
           path: android/app/build/outputs/apk/debug/app-debug.apk
