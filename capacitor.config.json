@@ -1,6 +1,8 @@
 {
   "appId": "com.crmleadspro.app",
   "appName": "CRM Leads Pro",
-  "webDir": "./",
-  "bundledWebRuntime": false
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
 }
