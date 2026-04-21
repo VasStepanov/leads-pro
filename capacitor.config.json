@@ -1,0 +1,6 @@
+{
+  "appId": "com.leadspro.pwa",
+  "appName": "Leads Pro",
+  "webDir": "./",
+  "bundledWebRuntime": false
+}
