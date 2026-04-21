@@ -4,11 +4,11 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
-        steps:
+    steps:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -16,15 +16,16 @@ jobs:
       - name: Prepare Files
         run: |
           mkdir -p www
-          # Копируем всё, кроме папок с точкой и самой папки www
-          cp -r assets index.html manifest.json sw.js www/ 2>/dev/null || true
+          cp -r index.html manifest.json www/ || true
+          cp -r assets www/ || true
+          cp -r sw.js www/ || true
 
-      - name: Install Dependencies
+      - name: Install Deps
         run: |
           npm install --no-package-lock
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0
 
-      - name: Initialize and Add Android
+      - name: Cap Init
         run: |
           npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir www
           npx cap add android
@@ -41,4 +42,3 @@ jobs:
         with:
           name: CRM-Leads-Pro-Debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
