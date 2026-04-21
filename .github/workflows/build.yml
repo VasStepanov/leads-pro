@@ -4,7 +4,7 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
-        steps:
+    steps:
       - name: Checkout Source
         uses: actions/checkout@v4
 
@@ -16,12 +16,13 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install --no-package-lock
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0
 
       - name: Initialize Capacitor
         run: |
-          # Эта команда создает нужные конфиги, если их нет
-          npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir ./ 
+          if [ ! -f "capacitor.config.json" ]; then
+            npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir ./
+          fi
           npx cap add android
 
       - name: Sync and Build
@@ -36,4 +37,3 @@ jobs:
         with:
           name: CRM-Leads-Pro-Debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
