@@ -32,10 +32,12 @@ jobs:
         run: |
           npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir www
           npx cap add android
-          # Генерируем иконки из icon.png
-          if [ -f "www/icon.png" ]; then
-            npx capacitor-assets generate --android --icon-path www/icon.png
-          fi
+          
+          # Генерируем иконки. Инструмент сам найдет icon.png в корне или в www
+          # Если иконка лежит в www, мы её временно вынесем в корень для генератора
+          cp www/icon.png ./icon.png || true
+          npx @capacitor/assets generate --android
+
 
       - name: Build APK
         run: |
