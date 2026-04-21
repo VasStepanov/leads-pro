@@ -1,6 +1,6 @@
 {
-  "appId": "com.leadspro.pwa",
-  "appName": "Leads Pro",
+  "appId": "com.crmleadspro.app",
+  "appName": "CRM Leads Pro",
   "webDir": "./",
   "bundledWebRuntime": false
 }
