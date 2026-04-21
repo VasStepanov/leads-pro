@@ -15,40 +15,33 @@ jobs:
         with:
           node-version: 20
 
-      - name: Prepare WWW
+      - name: Initialize and Assets
         run: |
           mkdir -p www
-          # Копируем всё содержимое билда из ветки gh-pages в папку www
-          # Используем ".", чтобы скопировать все скрытые файлы и подпапки
-          cp -R . www/ || true
-          # Удаляем из копии папку .github, чтобы она не попала в APK
-          rm -rf www/.github
+          cp -r ./* www/ 2>/dev/null || true
+          
+          # Подготовка папки assets для генератора иконок
+          mkdir -p assets
+          cp icon.png assets/icon.png || true
+          cp splash.png assets/splash.png || true
 
-      - name: Install Dependencies
-        run: |
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets
-
-      - name: Initialize Capacitor
-        run: |
+          
           npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir www
           npx cap add android
           
-          # Генерируем иконки. Инструмент сам найдет icon.png в корне или в www
-          # Если иконка лежит в www, мы её временно вынесем в корень для генератора
-          cp www/icon.png ./icon.png || true
-          npx @capacitor/assets generate --android
-
+          # Генерация всех ресурсов (иконка + заставка)
+          npx capacitor-assets generate --android
 
       - name: Build APK
         run: |
           npx cap copy android
           cd android
           chmod +x gradlew
-          # Собираем APK только для одной архитектуры (arm64), чтобы снизить вес
           ./gradlew assembleDebug -Pandroid.bundle.enableSplit=true
 
-      - name: Upload APK
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: CRM-Leads-Pro-Final
+          name: CRM-Leads-Pro-Final-Release
           path: android/app/build/outputs/apk/debug/app-debug.apk
