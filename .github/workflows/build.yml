@@ -1,8 +1,5 @@
 name: Build Android APK
-on:
-  push:
-    branches: [ gh-pages ] # Сборка начнется, когда ты сделаешь deploy
-
+on: [push, workflow_dispatch] # Добавили запуск вручную
 jobs:
   build:
     runs-on: ubuntu-latest
