@@ -27,7 +27,7 @@ jobs:
           # 1. Установка ядра и плагинов Capacitor 5
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets @capacitor/status-bar@5.0.0 @capacitor/splash-screen@5.0.0 --force
           
-          # 2. Создание конфига (настройки для удержания заставки)
+          # 2. Создание конфига
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.crmleadspro.app",
@@ -52,24 +52,19 @@ jobs:
           # 3. Инициализация платформы
           npx cap add android
           
-          # 4. Генерация ассетов
+          # 4. Генерация ассетов (иконки и заставка)
           npx capacitor-assets generate --android
           
-          # 5. ПАТЧ РЕСУРСОВ (вместо Java-кода)
-          # Переопределяем системные цвета, чтобы Android не нашел "белого" фона
-          cat <<EOF > android/app/src/main/res/values/colors.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="ic_launcher_background">#9333ea</color>
-              <color name="white">#9333ea</color>
-              <color name="background">#9333ea</color>
-          </resources>
-          EOF
-
-          # Исправляем styles.xml: заменяем белый фон окна на фиолетовый в основной теме
-          find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@drawable\/splash/windowBackground">#9333ea/g' {} +
-          find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@android:color\/white/windowBackground">#9333ea/g' {} +
+          # 5. ПАТЧ РЕСУРСОВ (правка существующих файлов)
+          # Заменяем белый цвет на фиолетовый во всех XML ресурсах (цвета, стили, бэкграунды)
+          # Это покроет и ic_launcher_background.xml, и styles.xml
+          find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/#ffffff/#9333ea/gI' {} +
+          find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/#FFFFFF/#9333ea/gI' {} +
+          find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/@android:color\/white/#9333ea/gI' {} +
           
+          # Принудительно патчим фоновое окно темы
+          find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@drawable\/splash/windowBackground">#9333ea/g' {} +
+
           # 6. Синхронизация
           npx cap sync android
 
