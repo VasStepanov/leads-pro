@@ -25,7 +25,8 @@ jobs:
           cp splash.png assets/splash.png || true
 
           # Устанавливаем ядро и нужные плагины
-          npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets @capacitor/status-bar @capacitor/splash-screen
+          npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets @capacitor/status-bar@5.0.0 @capacitor/splash-screen@5.0.0 --force
+
           
           # Инициализируем проект
           npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir www
