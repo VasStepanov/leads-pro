@@ -20,18 +20,22 @@ jobs:
           mkdir -p www
           cp -r ./* www/ 2>/dev/null || true
           
-          # Подготовка папки assets для генератора иконок
           mkdir -p assets
           cp icon.png assets/icon.png || true
           cp splash.png assets/splash.png || true
 
-          npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets
+          # Устанавливаем ядро и нужные плагины
+          npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets @capacitor/status-bar @capacitor/splash-screen
           
+          # Инициализируем проект
           npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir www
           npx cap add android
           
-          # Генерация всех ресурсов (иконка + заставка)
+          # Генерируем иконки и сплеш
           npx capacitor-assets generate --android
+          
+          # ВАЖНО: Синхронизируем плагины с андроид-проектом
+          npx cap sync android
 
       - name: Build APK
         run: |
