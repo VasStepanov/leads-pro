@@ -27,7 +27,7 @@ jobs:
           # Устанавливаем ядро и нужные плагины
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets @capacitor/status-bar@5.0.0 @capacitor/splash-screen@5.0.0 --force
           
-          # 1. Создаем итоговый конфиг со всеми твоими настройками + фикс заставки
+          # 1. Создаем конфиг
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.crmleadspro.app",
@@ -58,19 +58,43 @@ jobs:
           # 2. Инициализируем проект
           npx cap add android
           
-          # 3. Генерируем иконки и сплеш
+          # 3. Перезаписываем MainActivity.java (Исправление белого экрана на уровне Java)
+          # Создаем директорию на случай, если она не создалась
+          mkdir -p android/app/src/main/java/com/crmleadspro/app/
+          
+          cat <<EOF > android/app/src/main/java/com/crmleadspro/app/MainActivity.java
+          package com.crmleadspro.app;
+
+          import android.os.Bundle;
+          import android.graphics.Color;
+          import android.webkit.WebView;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+              }
+
+              @Override
+              public void onStart() {
+                  super.onStart();
+                  // Принудительно красим фон WebView в фиолетовый сразу при старте
+                  WebView webView = this.getBridge().getWebView();
+                  webView.setBackgroundColor(Color.parseColor("#9333ea"));
+              }
+          }
+          EOF
+          
+          # 4. Генерируем иконки и сплеш
           npx capacitor-assets generate --android
           
-          # 4. Патчим нативные стили (убираем белый цвет из системных тем Android)
+          # 5. Патчим XML стили (безопасно)
           find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/#ffffff/#9333ea/gI' {} +
           find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/@android:color\/white/#9333ea/gI' {} +
           find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@drawable\/splash/windowBackground">#9333ea/g' {} +
-
-          FILE_PATH="android/app/src/main/java/com/crmleadspro/app/MainActivity.java"
-          sed -i '/import com.getcapacitor.BridgeActivity;/a import android.webkit.WebView;\nimport android.graphics.Color;' $FILE_PATH
-          sed -i '/public class MainActivity extends BridgeActivity/a \  @Override\n  public void onStart() {\n    super.onStart();\n    WebView webView = this.getBridge().getWebView();\n    webView.setBackgroundColor(Color.parseColor("#9333ea"));\n  }' $FILE_PATH
           
-          # 5. Синхронизируем настройки в созданный проект
+          # 6. Синхронизируем все изменения
           npx cap sync android
 
       - name: Build APK
