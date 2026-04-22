@@ -24,8 +24,10 @@ jobs:
           cp icon.png assets/icon.png || true
           cp splash.png assets/splash.png || true
 
+          # 1. Установка ядра и плагинов Capacitor 5
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets @capacitor/status-bar@5.0.0 @capacitor/splash-screen@5.0.0 --force
           
+          # 2. Создание конфига (настройки для удержания заставки)
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.crmleadspro.app",
@@ -37,8 +39,7 @@ jobs:
                 "launchAutoHide": false,
                 "backgroundColor": "#9333ea",
                 "androidScaleType": "CENTER_CROP",
-                "showSpinner": false,
-                "useDialog": true
+                "showSpinner": false
               },
               "StatusBar": {
                 "backgroundColor": "#9333ea",
@@ -48,48 +49,28 @@ jobs:
           }
           EOF
 
+          # 3. Инициализация платформы
           npx cap add android
           
-          # ПЕРЕЗАПИСЬ MainActivity.java (Финальная версия без конфликтов)
-          mkdir -p android/app/src/main/java/com/crmleadspro.app/
-          cat <<EOF > android/app/src/main/java/com/crmleadspro.app/MainActivity.java
-          package com.crmleadspro.app;
-
-          import android.os.Bundle;
-          import android.graphics.Color;
-          import com.getcapacitor.BridgeActivity;
-
-          public class MainActivity extends BridgeActivity {
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  // Красим фон самого окна активности, чтобы под WebView не было белого цвета
-                  try {
-                      getWindow().getDecorView().setBackgroundColor(Color.parseColor("#9333ea"));
-                      if (this.bridge != null && this.bridge.getWebView() != null) {
-                          this.bridge.getWebView().setBackgroundColor(Color.parseColor("#9333ea"));
-                      }
-                  } catch (Exception e) {
-                      // Игнорируем ошибки инициализации
-                  }
-              }
-          }
-          EOF
-          
+          # 4. Генерация ассетов
           npx capacitor-assets generate --android
           
-          # Патчим стили, чтобы само приложение знало, что оно фиолетовое по умолчанию
+          # 5. ПАТЧ РЕСУРСОВ (вместо Java-кода)
+          # Переопределяем системные цвета, чтобы Android не нашел "белого" фона
           cat <<EOF > android/app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
+              <color name="ic_launcher_background">#9333ea</color>
               <color name="white">#9333ea</color>
               <color name="background">#9333ea</color>
           </resources>
           EOF
 
-          find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/#ffffff/#9333ea/gI' {} +
+          # Исправляем styles.xml: заменяем белый фон окна на фиолетовый в основной теме
           find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@drawable\/splash/windowBackground">#9333ea/g' {} +
+          find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@android:color\/white/windowBackground">#9333ea/g' {} +
           
+          # 6. Синхронизация
           npx cap sync android
 
       - name: Build APK
