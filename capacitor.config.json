@@ -7,12 +7,16 @@
     "hostname": "localhost"
   },
   "plugins": {
-  "SplashScreen": {
-    "launchShowDuration": 2000,
-    "launchAutoHide": true,
-    "androidScaleType": "CENTER_CROP",
-    "backgroundColor": "#9333ea" 
+    "SplashScreen": {
+      "launchShowDuration": 500,
+      "backgroundColor": "#9333ea",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "backgroundColor": "#212121",
+      "style": "DARK"
+    }
   }
-}
 
 }
