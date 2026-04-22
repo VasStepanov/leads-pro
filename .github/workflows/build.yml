@@ -31,10 +31,6 @@ jobs:
             "appId": "com.crmleadspro.app",
             "appName": "CRM Leads Pro",
             "webDir": "www",
-            "server": {
-              "androidScheme": "https",
-              "hostname": "localhost"
-            },
             "plugins": {
               "SplashScreen": {
                 "launchShowDuration": 30000,
@@ -54,55 +50,35 @@ jobs:
 
           npx cap add android
           
-          # ПЕРЕЗАПИСЬ MainActivity.java (Упрощенная и стабильная версия)
+          # ПЕРЕЗАПИСЬ MainActivity.java (Финальная версия без конфликтов)
           mkdir -p android/app/src/main/java/com/crmleadspro.app/
           cat <<EOF > android/app/src/main/java/com/crmleadspro.app/MainActivity.java
           package com.crmleadspro.app;
 
           import android.os.Bundle;
           import android.graphics.Color;
-          import android.view.View;
-          import android.view.ViewGroup;
-          import android.webkit.WebView;
-          import android.webkit.WebViewClient;
-          import android.widget.FrameLayout;
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
-              private View shield;
-
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-
-                  // 1. Создаем нативный фиолетовый слой
-                  shield = new View(this);
-                  shield.setBackgroundColor(Color.parseColor("#9333ea"));
-                  shield.setLayoutParams(new FrameLayout.LayoutParams(
-                      ViewGroup.LayoutParams.MATCH_PARENT,
-                      ViewGroup.LayoutParams.MATCH_PARENT));
-
-                  // 2. Накладываем поверх всего
-                  addContentView(shield, shield.getLayoutParams());
-
-                  // 3. Ждем окончания загрузки страницы в WebView, чтобы убрать щит
-                  this.getBridge().getWebView().setWebViewClient(new WebViewClient() {
-                      @Override
-                      public void onPageFinished(WebView view, String url) {
-                          super.onPageFinished(view, url);
-                          if (shield != null) {
-                              shield.setVisibility(View.GONE);
-                              ((ViewGroup)shield.getParent()).removeView(shield);
-                              shield = null;
-                          }
+                  // Красим фон самого окна активности, чтобы под WebView не было белого цвета
+                  try {
+                      getWindow().getDecorView().setBackgroundColor(Color.parseColor("#9333ea"));
+                      if (this.bridge != null && this.bridge.getWebView() != null) {
+                          this.bridge.getWebView().setBackgroundColor(Color.parseColor("#9333ea"));
                       }
-                  });
+                  } catch (Exception e) {
+                      // Игнорируем ошибки инициализации
+                  }
               }
           }
           EOF
           
           npx capacitor-assets generate --android
           
+          # Патчим стили, чтобы само приложение знало, что оно фиолетовое по умолчанию
           cat <<EOF > android/app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
