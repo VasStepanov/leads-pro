@@ -24,10 +24,10 @@ jobs:
           cp icon.png assets/icon.png || true
           cp splash.png assets/splash.png || true
 
-          # Устанавливаем ядро и нужные плагины
+          # 1. Установка зависимостей
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets @capacitor/status-bar@5.0.0 @capacitor/splash-screen@5.0.0 --force
           
-          # 1. Создаем конфиг
+          # 2. Создание конфига с параметром useDialog
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.crmleadspro.app",
@@ -45,7 +45,8 @@ jobs:
                 "androidScaleType": "CENTER_CROP",
                 "showSpinner": false,
                 "splashFullScreen": true,
-                "splashImmersive": true
+                "splashImmersive": true,
+                "useDialog": true
               },
               "StatusBar": {
                 "backgroundColor": "#9333ea",
@@ -55,46 +56,49 @@ jobs:
           }
           EOF
 
-          # 2. Инициализируем проект
+          # 3. Добавление андроид-платформы
           npx cap add android
           
-          # 3. Перезаписываем MainActivity.java (Исправление белого экрана на уровне Java)
-          # Создаем директорию на случай, если она не создалась
+          # 4. Перезапись MainActivity.java для покраски WebView
           mkdir -p android/app/src/main/java/com/crmleadspro/app/
-          
           cat <<EOF > android/app/src/main/java/com/crmleadspro/app/MainActivity.java
           package com.crmleadspro.app;
-
           import android.os.Bundle;
           import android.graphics.Color;
           import android.webkit.WebView;
           import com.getcapacitor.BridgeActivity;
-
           public class MainActivity extends BridgeActivity {
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
               }
-
               @Override
               public void onStart() {
                   super.onStart();
-                  // Принудительно красим фон WebView в фиолетовый сразу при старте
                   WebView webView = this.getBridge().getWebView();
                   webView.setBackgroundColor(Color.parseColor("#9333ea"));
               }
           }
           EOF
           
-          # 4. Генерируем иконки и сплеш
+          # 5. Генерация иконок и сплеша
           npx capacitor-assets generate --android
           
-          # 5. Патчим XML стили (безопасно)
+          # 6. Глубокий патч системных цветов и тем
+          cat <<EOF > android/app/src/main/res/values/colors.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="white">#9333ea</color>
+              <color name="background">#9333ea</color>
+          </resources>
+          EOF
+
           find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/#ffffff/#9333ea/gI' {} +
           find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/@android:color\/white/#9333ea/gI' {} +
           find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@drawable\/splash/windowBackground">#9333ea/g' {} +
+          find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@android:color\/white/windowBackground">#9333ea/g' {} +
           
-          # 6. Синхронизируем все изменения
+          # 7. Финальная синхронизация
           npx cap sync android
 
       - name: Build APK
