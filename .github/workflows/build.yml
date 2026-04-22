@@ -26,20 +26,47 @@ jobs:
 
           # Устанавливаем ядро и нужные плагины
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets @capacitor/status-bar@5.0.0 @capacitor/splash-screen@5.0.0 --force
+          
+          # 1. Создаем итоговый конфиг со всеми твоими настройками + фикс заставки
+          cat <<EOF > capacitor.config.json
+          {
+            "appId": "com.crmleadspro.app",
+            "appName": "CRM Leads Pro",
+            "webDir": "www",
+            "server": {
+              "androidScheme": "https",
+              "hostname": "localhost"
+            },
+            "plugins": {
+              "SplashScreen": {
+                "launchShowDuration": 30000,
+                "launchAutoHide": false,
+                "backgroundColor": "#9333ea",
+                "androidScaleType": "CENTER_CROP",
+                "showSpinner": false,
+                "splashFullScreen": true,
+                "splashImmersive": true
+              },
+              "StatusBar": {
+                "backgroundColor": "#9333ea",
+                "style": "DARK"
+              }
+            }
+          }
+          EOF
 
-          
-          # Инициализируем проект
-          npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir www
+          # 2. Инициализируем проект
           npx cap add android
-          cp capacitor.config.json android/app/src/main/assets/capacitor.config.json || true
           
-          
-          # Генерируем иконки и сплеш
+          # 3. Генерируем иконки и сплеш
           npx capacitor-assets generate --android
-          find android/app/src/main/res/values* -name "*.xml" -exec sed -i 's/#ffffff/#9333ea/gI' {} +
-          find android/app/src/main/res/values* -name "*.xml" -exec sed -i 's/@android:color\/white/#9333ea/gI' {} +
           
-          # ВАЖНО: Синхронизируем плагины с андроид-проектом
+          # 4. Патчим нативные стили (убираем белый цвет из системных тем Android)
+          find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/#ffffff/#9333ea/gI' {} +
+          find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/@android:color\/white/#9333ea/gI' {} +
+          find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@drawable\/splash/windowBackground">#9333ea/g' {} +
+          
+          # 5. Синхронизируем настройки в созданный проект
           npx cap sync android
 
       - name: Build APK
