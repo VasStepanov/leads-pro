@@ -31,11 +31,12 @@ jobs:
           # Инициализируем проект
           npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir www
           npx cap add android
-          sed -i 's/<item name="android:background">#9333ea<\/item>/<item name="android:background">#9333ea<\/item>/g' android/app/src/main/res/values/styles.xml || true
-          sed -i 's/<item name="windowSplashScreenBackground">#9333ea<\/item>/<item name="windowSplashScreenBackground">#9333ea<\/item>/g' android/app/src/main/res/values-v31/styles.xml || true
+          
           
           # Генерируем иконки и сплеш
           npx capacitor-assets generate --android
+          find android/app/src/main/res/values* -name "*.xml" -exec sed -i 's/#ffffff/#9333ea/gI' {} +
+          find android/app/src/main/res/values* -name "*.xml" -exec sed -i 's/@android:color\/white/#9333ea/gI' {} +
           
           # ВАЖНО: Синхронизируем плагины с андроид-проектом
           npx cap sync android
