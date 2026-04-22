@@ -65,6 +65,10 @@ jobs:
           find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/#ffffff/#9333ea/gI' {} +
           find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/@android:color\/white/#9333ea/gI' {} +
           find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@drawable\/splash/windowBackground">#9333ea/g' {} +
+
+          FILE_PATH="android/app/src/main/java/com/crmleadspro/app/MainActivity.java"
+          sed -i '/import com.getcapacitor.BridgeActivity;/a import android.webkit.WebView;\nimport android.graphics.Color;' $FILE_PATH
+          sed -i '/public class MainActivity extends BridgeActivity/a \  @Override\n  public void onStart() {\n    super.onStart();\n    WebView webView = this.getBridge().getWebView();\n    webView.setBackgroundColor(Color.parseColor("#9333ea"));\n  }' $FILE_PATH
           
           # 5. Синхронизируем настройки в созданный проект
           npx cap sync android
