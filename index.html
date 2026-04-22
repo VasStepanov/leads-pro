@@ -15,6 +15,25 @@
   
   <title>CRM Leads Pro</title>
 
+  <style>
+  /* 1. По умолчанию ставим фиолетовый (как сплэш), чтобы переход был бесшовным */
+  html, body {
+    background-color: #9333ea !important; 
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 2. Если в localStorage темная тема — сразу красим в черный/темный */
+  html.dark__theme {
+    background-color: #121212 !important;
+  }
+
+  /* 3. Если светлая — в ваш серый */
+  html.light__theme {
+    background-color: #fcfcfc !important;
+  }
+</style>
+
   <script>
     (function () {
       const theme = localStorage.getItem('theme') || 'light__theme';
