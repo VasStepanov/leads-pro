@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="theme-color" id="theme-meta" content="#9333ea">
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   
@@ -18,9 +19,13 @@
     (function () {
       const theme = localStorage.getItem('theme') || 'light__theme';
       document.documentElement.classList.add(theme);
+      
+      // Опционально: меняем цвет мета-тега сразу
+      const meta = document.getElementById('theme-meta');
+      meta.content = theme === 'dark__theme' ? '#fcfcfc' : '#fcfcfc';
     })();
-  </script>
-  <script type="module" crossorigin src="./assets/index-DY8dXdZw.js"></script>
+</script>
+  <script type="module" crossorigin src="./assets/index-BwOPjxPs.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-C1e1m87f.css">
 <link rel="manifest" href="./manifest.webmanifest"></head>
 
