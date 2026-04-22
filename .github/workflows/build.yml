@@ -31,6 +31,7 @@ jobs:
           # Инициализируем проект
           npx cap init "CRM Leads Pro" com.crmleadspro.app --web-dir www
           npx cap add android
+          cp capacitor.config.json android/app/src/main/assets/capacitor.config.json || true
           
           
           # Генерируем иконки и сплеш
