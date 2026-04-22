@@ -27,7 +27,7 @@ jobs:
           # 1. Установка зависимостей
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets @capacitor/status-bar@5.0.0 @capacitor/splash-screen@5.0.0 --force
           
-          # 2. Создание конфига с параметром useDialog
+          # 2. Создание конфига
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.crmleadspro.app",
@@ -44,8 +44,6 @@ jobs:
                 "backgroundColor": "#9333ea",
                 "androidScaleType": "CENTER_CROP",
                 "showSpinner": false,
-                "splashFullScreen": true,
-                "splashImmersive": true,
                 "useDialog": true
               },
               "StatusBar": {
@@ -59,24 +57,52 @@ jobs:
           # 3. Добавление андроид-платформы
           npx cap add android
           
-          # 4. Перезапись MainActivity.java для покраски WebView
-          mkdir -p android/app/src/main/java/com/crmleadspro/app/
-          cat <<EOF > android/app/src/main/java/com/crmleadspro/app/MainActivity.java
+          # 4. Перезапись MainActivity.java (Создаем нативный "щит")
+          mkdir -p android/app/src/main/java/com/crmleadspro.app/
+          cat <<EOF > android/app/src/main/java/com/crmleadspro.app/MainActivity.java
           package com.crmleadspro.app;
+
           import android.os.Bundle;
           import android.graphics.Color;
+          import android.view.View;
+          import android.view.ViewGroup;
           import android.webkit.WebView;
+          import android.widget.FrameLayout;
           import com.getcapacitor.BridgeActivity;
+
           public class MainActivity extends BridgeActivity {
+              private View shield;
+
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-              }
-              @Override
-              public void onStart() {
-                  super.onStart();
-                  WebView webView = this.getBridge().getWebView();
-                  webView.setBackgroundColor(Color.parseColor("#9333ea"));
+
+                  // Создаем фиолетовый щит
+                  shield = new View(this);
+                  shield.setBackgroundColor(Color.parseColor("#9333ea"));
+                  shield.setLayoutParams(new FrameLayout.LayoutParams(
+                      ViewGroup.LayoutParams.MATCH_PARENT,
+                      ViewGroup.LayoutParams.MATCH_PARENT));
+
+                  // Накладываем его поверх WebView
+                  addContentView(shield, shield.getLayoutParams());
+
+                  // Слушаем событие 'removeShield' из JavaScript
+                  this.getBridge().getWebView().evaluateJavascript(
+                      "document.addEventListener('removeShield', function() { window.androidBridge.remove(); });", null);
+                  
+                  // Добавляем интерфейс для связи
+                  this.getBridge().getWebView().addJavascriptInterface(new Object() {
+                      @android.webkit.JavascriptInterface
+                      public void remove() {
+                          runOnUiThread(() -> {
+                              if (shield != null) {
+                                  ((ViewGroup)shield.getParent()).removeView(shield);
+                                  shield = null;
+                              }
+                          });
+                      }
+                  }, "androidBridge");
               }
           }
           EOF
@@ -84,7 +110,7 @@ jobs:
           # 5. Генерация иконок и сплеша
           npx capacitor-assets generate --android
           
-          # 6. Глубокий патч системных цветов и тем
+          # 6. Глубокий патч системных XML
           cat <<EOF > android/app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -94,9 +120,7 @@ jobs:
           EOF
 
           find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/#ffffff/#9333ea/gI' {} +
-          find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/@android:color\/white/#9333ea/gI' {} +
           find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@drawable\/splash/windowBackground">#9333ea/g' {} +
-          find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@android:color\/white/windowBackground">#9333ea/g' {} +
           
           # 7. Финальная синхронизация
           npx cap sync android
