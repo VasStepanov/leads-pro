@@ -24,10 +24,8 @@ jobs:
           cp icon.png assets/icon.png || true
           cp splash.png assets/splash.png || true
 
-          # 1. Установка зависимостей
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0 @capacitor/assets @capacitor/status-bar@5.0.0 @capacitor/splash-screen@5.0.0 --force
           
-          # 2. Создание конфига
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.crmleadspro.app",
@@ -54,10 +52,9 @@ jobs:
           }
           EOF
 
-          # 3. Добавление андроид-платформы
           npx cap add android
           
-          # 4. Перезапись MainActivity.java (Создаем нативный "щит")
+          # ПЕРЕЗАПИСЬ MainActivity.java (Упрощенная и стабильная версия)
           mkdir -p android/app/src/main/java/com/crmleadspro.app/
           cat <<EOF > android/app/src/main/java/com/crmleadspro.app/MainActivity.java
           package com.crmleadspro.app;
@@ -67,6 +64,7 @@ jobs:
           import android.view.View;
           import android.view.ViewGroup;
           import android.webkit.WebView;
+          import android.webkit.WebViewClient;
           import android.widget.FrameLayout;
           import com.getcapacitor.BridgeActivity;
 
@@ -77,40 +75,34 @@ jobs:
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
 
-                  // Создаем фиолетовый щит
+                  // 1. Создаем нативный фиолетовый слой
                   shield = new View(this);
                   shield.setBackgroundColor(Color.parseColor("#9333ea"));
                   shield.setLayoutParams(new FrameLayout.LayoutParams(
                       ViewGroup.LayoutParams.MATCH_PARENT,
                       ViewGroup.LayoutParams.MATCH_PARENT));
 
-                  // Накладываем его поверх WebView
+                  // 2. Накладываем поверх всего
                   addContentView(shield, shield.getLayoutParams());
 
-                  // Слушаем событие 'removeShield' из JavaScript
-                  this.getBridge().getWebView().evaluateJavascript(
-                      "document.addEventListener('removeShield', function() { window.androidBridge.remove(); });", null);
-                  
-                  // Добавляем интерфейс для связи
-                  this.getBridge().getWebView().addJavascriptInterface(new Object() {
-                      @android.webkit.JavascriptInterface
-                      public void remove() {
-                          runOnUiThread(() -> {
-                              if (shield != null) {
-                                  ((ViewGroup)shield.getParent()).removeView(shield);
-                                  shield = null;
-                              }
-                          });
+                  // 3. Ждем окончания загрузки страницы в WebView, чтобы убрать щит
+                  this.getBridge().getWebView().setWebViewClient(new WebViewClient() {
+                      @Override
+                      public void onPageFinished(WebView view, String url) {
+                          super.onPageFinished(view, url);
+                          if (shield != null) {
+                              shield.setVisibility(View.GONE);
+                              ((ViewGroup)shield.getParent()).removeView(shield);
+                              shield = null;
+                          }
                       }
-                  }, "androidBridge");
+                  });
               }
           }
           EOF
           
-          # 5. Генерация иконок и сплеша
           npx capacitor-assets generate --android
           
-          # 6. Глубокий патч системных XML
           cat <<EOF > android/app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -122,7 +114,6 @@ jobs:
           find android/app/src/main/res/values -name "*.xml" -exec sed -i 's/#ffffff/#9333ea/gI' {} +
           find android/app/src/main/res/values -name "styles.xml" -exec sed -i 's/windowBackground">@drawable\/splash/windowBackground">#9333ea/g' {} +
           
-          # 7. Финальная синхронизация
           npx cap sync android
 
       - name: Build APK
